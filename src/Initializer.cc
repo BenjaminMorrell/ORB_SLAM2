@@ -26,6 +26,7 @@
 #include "ORBmatcher.h"
 
 #include<thread>
+#include <iostream>
 
 namespace ORB_SLAM2
 {
@@ -111,11 +112,15 @@ bool Initializer::Initialize(const Frame &CurrentFrame, const vector<int> &vMatc
     // Compute ratio of scores
     float RH = SH/(SH+SF);
 
+    std::cout << "Ratio score RH is: " << RH << std::endl;
+
     // Try to reconstruct from homography or fundamental depending on the ratio (0.40-0.45)
     if(RH>0.40)
         return ReconstructH(vbMatchesInliersH,H,mK,R21,t21,vP3D,vbTriangulated,1.0,50);
     else //if(pF_HF>0.6)
         return ReconstructF(vbMatchesInliersF,F,mK,R21,t21,vP3D,vbTriangulated,1.0,50);
+
+    std::cout << "Failed criteria - no initialisation" << std::endl;
 
     return false;
 }
@@ -470,6 +475,8 @@ float Initializer::CheckFundamental(const cv::Mat &F21, vector<bool> &vbMatchesI
 bool Initializer::ReconstructF(vector<bool> &vbMatchesInliers, cv::Mat &F21, cv::Mat &K,
                             cv::Mat &R21, cv::Mat &t21, vector<cv::Point3f> &vP3D, vector<bool> &vbTriangulated, float minParallax, int minTriangulated)
 {
+    std::cout << "Trying ReconstructF..." << std::endl;
+    
     int N=0;
     for(size_t i=0, iend = vbMatchesInliers.size() ; i<iend; i++)
         if(vbMatchesInliers[i])
@@ -516,9 +523,12 @@ bool Initializer::ReconstructF(vector<bool> &vbMatchesInliers, cv::Mat &F21, cv:
     // If there is not a clear winner or not enough triangulated points reject initialization
     if(maxGood<nMinGood || nsimilar>1)
     {
+        std::cout << "Rejecting initialization - no clear winner in Reconstruct F" << std::endl;
+        std::cout << "MaxGood is:" << maxGood << ", nMinGood is: " << nMinGood << ", nsimilar: " << nsimilar << endl;
+        std::cout << "Min Triangulation is: " << minTriangulated << ", Number of inliers is: " << N << std::endl;
         return false;
     }
-
+    std::cout << "MaxGood is:" << maxGood << ", nMinGood is: " << nMinGood << ", nsimilar: " << nsimilar << endl;
     // If best reconstruction has enough parallax initialize
     if(maxGood==nGood1)
     {
@@ -565,13 +575,15 @@ bool Initializer::ReconstructF(vector<bool> &vbMatchesInliers, cv::Mat &F21, cv:
             return true;
         }
     }
-
+    std::cout << "Rejecting initialization because best reconstruction does not have enough parallax" << std::endl;
+    std::cout << "Min Parallax is: " << minParallax << std::endl;
     return false;
 }
 
 bool Initializer::ReconstructH(vector<bool> &vbMatchesInliers, cv::Mat &H21, cv::Mat &K,
                       cv::Mat &R21, cv::Mat &t21, vector<cv::Point3f> &vP3D, vector<bool> &vbTriangulated, float minParallax, int minTriangulated)
 {
+    std::cout << "Trying ReconstructH..." << std::endl;
     int N=0;
     for(size_t i=0, iend = vbMatchesInliers.size() ; i<iend; i++)
         if(vbMatchesInliers[i])
@@ -597,6 +609,7 @@ bool Initializer::ReconstructH(vector<bool> &vbMatchesInliers, cv::Mat &H21, cv:
     if(d1/d2<1.00001 || d2/d3<1.00001)
     {
         return false;
+        std::cout << "Rejecting initialization because d1, d2, d3 metrics fail" << std::endl;
     }
 
     vector<cv::Mat> vR, vt, vn;
@@ -724,10 +737,14 @@ bool Initializer::ReconstructH(vector<bool> &vbMatchesInliers, cv::Mat &H21, cv:
         vt[bestSolutionIdx].copyTo(t21);
         vP3D = bestP3D;
         vbTriangulated = bestTriangulated;
-
+        std::cout << "bestGood is: " << bestGood << ", secondBest: " << secondBestGood << ", bestParallax: " << bestParallax << ", N: " << N << std::endl;
         return true;
     }
 
+    std::cout << "Rejecting initialization because parrallax and or minTriangulared fail" << std::endl;
+    std::cout << "bestGood is: " << bestGood << ", secondBest: " << secondBestGood << ", bestParallax: " << bestParallax << ", N: " << N << std::endl;
+    // std::cout << "Min Parallax is: " << minParallax << std::endl;
+    // std::cout << "Min Triangulation is: " << minTriangulated << ", Number of inliers is: " << N << std::endl;
     return false;
 }
 

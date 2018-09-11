@@ -121,6 +121,7 @@ public:
     int GetTrackingState();
     std::vector<MapPoint*> GetTrackedMapPoints();
     std::vector<cv::KeyPoint> GetTrackedKeyPointsUn();
+    cv::Mat GetFrame();
 
 private:
 
@@ -174,6 +175,10 @@ private:
     std::vector<MapPoint*> mTrackedMapPoints;
     std::vector<cv::KeyPoint> mTrackedKeyPointsUn;
     std::mutex mMutexState;
+
+    // get current frame 
+    int mTrackingFrame;
+    std::vector<KeyFrame*> mFramePoints;
 };
 
 }// namespace ORB_SLAM

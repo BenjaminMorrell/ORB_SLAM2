@@ -25,11 +25,14 @@
 #include<chrono>
 
 #include<ros/ros.h>
+#include <tf/transform_broadcaster.h>
+#include <std_msgs/String.h>
 #include <cv_bridge/cv_bridge.h>
 
 #include<opencv2/core/core.hpp>
 
 #include"../../../include/System.h"
+#include "../../../include/Converter.h"
 
 using namespace std;
 
@@ -41,6 +44,14 @@ public:
     void GrabImage(const sensor_msgs::ImageConstPtr& msg);
 
     ORB_SLAM2::System* mpSLAM;
+
+    // setting up transform 
+    cv::Mat currentPosFrame;
+    tf::Transform transform_current;
+    tf::Quaternion q;
+    tf::TransformBroadcaster br;
+    vector<float> q_temp;
+    cv::Mat R;
 };
 
 int main(int argc, char **argv)
@@ -65,12 +76,14 @@ int main(int argc, char **argv)
 
     ros::spin();
 
+    // Save camera trajectory
+    SLAM.SaveKeyFrameTrajectoryTUM("/home/bjm/postdoc/data/KeyFrameTrajectory_TUM_Format.txt");
+    SLAM.SaveTrajectoryTUM("/home/bjm/postdoc/data/FrameTrajectory_TUM_Format.txt");
+    SLAM.SaveTrajectoryKITTI("/home/bjm/postdoc/data/FrameTrajectory_KITTI_Format.txt");
+    
     // Stop all threads
     SLAM.Shutdown();
-
-    // Save camera trajectory
-    SLAM.SaveKeyFrameTrajectoryTUM("KeyFrameTrajectory.txt");
-
+    
     ros::shutdown();
 
     return 0;
@@ -91,6 +104,32 @@ void ImageGrabber::GrabImage(const sensor_msgs::ImageConstPtr& msg)
     }
 
     mpSLAM->TrackMonocular(cv_ptr->image,cv_ptr->header.stamp.toSec());
+
+    // publish tf 
+    currentPosFrame = mpSLAM->GetFrame();
+    cout << "matrix out is " << currentPosFrame << endl;
+    
+    cv::Size s = currentPosFrame.size();
+
+    if (s.width == 4)
+    {
+        R = currentPosFrame(cv::Range(0,2), cv::Range(0,2));
+        q_temp = ORB_SLAM2::Converter::toQuaternion(R);
+        tf::Quaternion quat(q_temp[0],q_temp[1],q_temp[2],q_temp[3]);
+        tf::Vector3 vec(currentPosFrame.at<float>(0, 3),currentPosFrame.at<float>(1, 3), currentPosFrame.at<float>(2, 3));
+        vec.rotate(quat.inverse().getAxis(),quat.inverse().getAngle());
+        transform_current.setOrigin(-vec);
+
+        //transform_current.setOrigin(tf::Vector3(-currentPosFrame.at<float>(0, 3),-currentPosFrame.at<float>(1, 3), -currentPosFrame.at<float>(2, 3)));
+        transform_current.setRotation(quat.inverse());
+    
+       // transform_current.setRotation(tf::Quaternion(q_temp[0],q_temp[1],q_temp[2],q_temp[3]).inverse());
+        br.sendTransform(tf::StampedTransform(transform_current, ros::Time::now(), "world","camera"));
+        
+    }
+       else {
+        cout << "tf matrix is empty " << endl;
+    }
 }
 
 

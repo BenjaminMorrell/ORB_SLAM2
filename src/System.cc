@@ -22,6 +22,7 @@
 
 #include "System.h"
 #include "Converter.h"
+#include "Tracking.h"
 #include <thread>
 #include <pangolin/pangolin.h>
 #include <iomanip>
@@ -487,6 +488,13 @@ vector<cv::KeyPoint> System::GetTrackedKeyPointsUn()
 {
     unique_lock<mutex> lock(mMutexState);
     return mTrackedKeyPointsUn;
+}
+
+// get tracker frame 
+cv::Mat System::GetFrame()
+{
+    unique_lock<mutex> lock(mMutexState);
+    return mpTracker->mCurrentFrame.mTcw;
 }
 
 } //namespace ORB_SLAM
