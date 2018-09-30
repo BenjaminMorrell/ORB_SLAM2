@@ -498,15 +498,16 @@ bool Initializer::ReconstructF(vector<bool> &vbMatchesInliers, cv::Mat &F21, cv:
     vector<cv::Point3f> vP3D1, vP3D2, vP3D3, vP3D4;
     vector<bool> vbTriangulated1,vbTriangulated2,vbTriangulated3, vbTriangulated4;
     float parallax1,parallax2, parallax3, parallax4;
+    float minZi, maxZi;
 
     std::cout << "Candidate 1:" << std::endl;
-    int nGood1 = CheckRT(R1,t1,mvKeys1,mvKeys2,mvMatches12,vbMatchesInliers,K, vP3D1, 4.0*mSigma2, vbTriangulated1, parallax1);
+    int nGood1 = CheckRT(R1,t1,mvKeys1,mvKeys2,mvMatches12,vbMatchesInliers,K, vP3D1, 4.0*mSigma2, vbTriangulated1, parallax1, minZi, maxZi);
     std::cout << "Candidate 2:" << std::endl;
-    int nGood2 = CheckRT(R2,t1,mvKeys1,mvKeys2,mvMatches12,vbMatchesInliers,K, vP3D2, 4.0*mSigma2, vbTriangulated2, parallax2);
+    int nGood2 = CheckRT(R2,t1,mvKeys1,mvKeys2,mvMatches12,vbMatchesInliers,K, vP3D2, 4.0*mSigma2, vbTriangulated2, parallax2, minZi, maxZi);
     std::cout << "Candidate 3:" << std::endl;
-    int nGood3 = CheckRT(R1,t2,mvKeys1,mvKeys2,mvMatches12,vbMatchesInliers,K, vP3D3, 4.0*mSigma2, vbTriangulated3, parallax3);
+    int nGood3 = CheckRT(R1,t2,mvKeys1,mvKeys2,mvMatches12,vbMatchesInliers,K, vP3D3, 4.0*mSigma2, vbTriangulated3, parallax3, minZi, maxZi);
     std::cout << "Candidate 4:" << std::endl;
-    int nGood4 = CheckRT(R2,t2,mvKeys1,mvKeys2,mvMatches12,vbMatchesInliers,K, vP3D4, 4.0*mSigma2, vbTriangulated4, parallax4);
+    int nGood4 = CheckRT(R2,t2,mvKeys1,mvKeys2,mvMatches12,vbMatchesInliers,K, vP3D4, 4.0*mSigma2, vbTriangulated4, parallax4, minZi, maxZi);
 
     int maxGood = max(nGood1,max(nGood2,max(nGood3,nGood4)));
 
@@ -719,7 +720,9 @@ bool Initializer::ReconstructH(vector<bool> &vbMatchesInliers, cv::Mat &H21, cv:
     int bestGood = 0;
     int secondBestGood = 0;    
     int bestSolutionIdx = -1;
+    // int bestZSolutionIdx = -1;
     float bestParallax = -1;
+    float bestMinZ = 0.001;
     vector<cv::Point3f> bestP3D;
     vector<bool> bestTriangulated;
 
@@ -728,14 +731,29 @@ bool Initializer::ReconstructH(vector<bool> &vbMatchesInliers, cv::Mat &H21, cv:
     for(size_t i=0; i<8; i++)
     {
         float parallaxi;
+        float minZi;
+        float maxZi;
         vector<cv::Point3f> vP3Di;
         vector<bool> vbTriangulatedi;
         std::cout << "Candidate " << i << ":" << std::endl;
-        int nGood = CheckRT(vR[i],vt[i],mvKeys1,mvKeys2,mvMatches12,vbMatchesInliers,K,vP3Di, 4.0*mSigma2, vbTriangulatedi, parallaxi);
+        int nGood = CheckRT(vR[i],vt[i],mvKeys1,mvKeys2,mvMatches12,vbMatchesInliers,K,vP3Di, 4.0*mSigma2, vbTriangulatedi, parallaxi, minZi, maxZi);
 
-        if(nGood>bestGood)
-        {
-            secondBestGood = bestGood;
+        if (maxZi - minZi > 100.0 || (minZi < 0.0 && maxZi > 0.0)){
+            // Too much variance - reject
+            nGood = -1;
+            cout << "Too much z variance for sample " << i << endl;
+        }
+        else if (minZi < 0.0){
+            // Reject the result that has z less than 0
+            nGood = -1;
+            cout << "ignoring sample " << i << " as z is negative. " << endl;
+        }
+
+        // Update for largest, minimum z - pick as the solution 
+        if (nGood > 0 && minZi > bestMinZ){
+            bestMinZ = minZi;
+            // bestZSolutionIdx = i;
+
             bestGood = nGood;
             bestSolutionIdx = i;
             bestParallax = parallaxi;
@@ -748,8 +766,10 @@ bool Initializer::ReconstructH(vector<bool> &vbMatchesInliers, cv::Mat &H21, cv:
         }
     }
 
+    cout << "best solution ID is " << bestSolutionIdx << ", min Z is: " << bestMinZ << endl;
 
-    if(secondBestGood<0.75*bestGood && bestParallax>=minParallax && bestGood>minTriangulated && bestGood>0.9*N)
+
+    if(bestParallax>=minParallax && bestGood>minTriangulated && bestGood>0.9*N)
     {
         vR[bestSolutionIdx].copyTo(R21);
         vt[bestSolutionIdx].copyTo(t21);
@@ -842,7 +862,7 @@ void Initializer::Normalize(const vector<cv::KeyPoint> &vKeys, vector<cv::Point2
 
 int Initializer::CheckRT(const cv::Mat &R, const cv::Mat &t, const vector<cv::KeyPoint> &vKeys1, const vector<cv::KeyPoint> &vKeys2,
                        const vector<Match> &vMatches12, vector<bool> &vbMatchesInliers,
-                       const cv::Mat &K, vector<cv::Point3f> &vP3D, float th2, vector<bool> &vbGood, float &parallax)
+                       const cv::Mat &K, vector<cv::Point3f> &vP3D, float th2, vector<bool> &vbGood, float &parallax, float &minZ, float &maxZ)
 {
     // Calibration parameters
     const float fx = K.at<float>(0,0);
@@ -871,7 +891,12 @@ int Initializer::CheckRT(const cv::Mat &R, const cv::Mat &t, const vector<cv::Ke
     cv::Mat O2 = -R.t()*t;
 
     int nGood=0;
+    // Initialise as large values
+    maxZ = -99999.9;
+    minZ = 999999.9;
+
     std::cout << "CheckRT start \n\n" << endl;
+    
     for(size_t i=0, iend=vMatches12.size();i<iend;i++)
     {
         if(!vbMatchesInliers[i])
@@ -883,12 +908,19 @@ int Initializer::CheckRT(const cv::Mat &R, const cv::Mat &t, const vector<cv::Ke
 
         Triangulate(kp1,kp2,P1,P2,p3dC1);
 
-        std::cout << p3dC1.at<float>(0) << ", " << p3dC1.at<float>(1) << ", " << p3dC1.at<float>(2) << endl;
+        // std::cout << p3dC1.at<float>(0) << ", " << p3dC1.at<float>(1) << ", " << p3dC1.at<float>(2) << endl;
 
         if(!isfinite(p3dC1.at<float>(0)) || !isfinite(p3dC1.at<float>(1)) || !isfinite(p3dC1.at<float>(2)))
         {
             vbGood[vMatches12[i].first]=false;
             continue;
+        }
+
+        // Track the maximum and minimum z values
+        if (p3dC1.at<float>(2) > maxZ){
+            maxZ = p3dC1.at<float>(2);
+        }else if (p3dC1.at<float>(2) < minZ){
+            minZ = p3dC1.at<float>(2);
         }
 
         // Check parallax
