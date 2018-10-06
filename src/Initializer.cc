@@ -45,6 +45,7 @@ Initializer::Initializer(const Frame &ReferenceFrame, float sigma, int iteration
 bool Initializer::Initialize(const Frame &CurrentFrame, const vector<int> &vMatches12, cv::Mat &R21, cv::Mat &t21,
                              vector<cv::Point3f> &vP3D, vector<bool> &vbTriangulated)
 {
+    cout << "Iniside Initialize..." << endl;
     // Fill structures with current keypoints and matches with reference frame
     // Reference Frame: 1, Current Frame: 2
     mvKeys2 = CurrentFrame.mvKeysUn;
@@ -116,10 +117,10 @@ bool Initializer::Initialize(const Frame &CurrentFrame, const vector<int> &vMatc
 
     // Try to reconstruct from homography or fundamental depending on the ratio (0.40-0.45)
     float minParallax = 0.2;
-    if(RH>0.40)
+    //if(RH>0.40)
         return ReconstructH(vbMatchesInliersH,H,mK,R21,t21,vP3D,vbTriangulated,minParallax,50);
-    else //if(pF_HF>0.6)
-        return ReconstructF(vbMatchesInliersF,F,mK,R21,t21,vP3D,vbTriangulated,minParallax,50);
+    //else //if(pF_HF>0.6)
+      //  return ReconstructF(vbMatchesInliersF,F,mK,R21,t21,vP3D,vbTriangulated,minParallax,50);
 
     std::cout << "Failed criteria - no initialisation" << std::endl;
 
@@ -736,6 +737,7 @@ bool Initializer::ReconstructH(vector<bool> &vbMatchesInliers, cv::Mat &H21, cv:
         vector<cv::Point3f> vP3Di;
         vector<bool> vbTriangulatedi;
         std::cout << "Candidate " << i << ":" << std::endl;
+
         int nGood = CheckRT(vR[i],vt[i],mvKeys1,mvKeys2,mvMatches12,vbMatchesInliers,K,vP3Di, 4.0*mSigma2, vbTriangulatedi, parallaxi, minZi, maxZi);
 
         if (maxZi - minZi > 100.0 || (minZi < 0.0 && maxZi > 0.0)){

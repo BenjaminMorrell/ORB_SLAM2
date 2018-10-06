@@ -192,6 +192,8 @@ Frame::Frame(const cv::Mat &imGray, const double &timeStamp, ORBextractor* extra
 
     N = mvKeys.size();
 
+    cout << "\t\t" << N << " features extracted" << endl;
+
     if(mvKeys.empty())
         return;
 

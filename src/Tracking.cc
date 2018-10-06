@@ -562,7 +562,7 @@ void Tracking::StereoInitialization()
 
 void Tracking::MonocularInitialization()
 {
-
+    std::cout << "Inside Tracking::MonocularInitialization()" << std::endl;
     if(!mpInitializer)
     {
         // Set Reference Frame
@@ -577,15 +577,21 @@ void Tracking::MonocularInitialization()
             if(mpInitializer)
                 delete mpInitializer;
 
-            mpInitializer =  new Initializer(mCurrentFrame,1.0,2000);
+            mpInitializer =  new Initializer(mCurrentFrame,10.0,2000);
 
             fill(mvIniMatches.begin(),mvIniMatches.end(),-1);
 
+            cout << "Initialized Initializer with nKeypoints: " << mCurrentFrame.mvKeys.size() << endl;
             return;
+        }
+        else
+        {
+            cout << "Too few keypoints to start initialization (min is 100): " << mCurrentFrame.mvKeys.size() << endl;
         }
     }
     else
     {
+        std::cout << "Trying to intialize in tracking.cc" << std::endl;
         // Try to initialize
         if((int)mCurrentFrame.mvKeys.size()<=100)
         {
@@ -602,6 +608,7 @@ void Tracking::MonocularInitialization()
         // Check if there are enough correspondences
         if(nmatches<100)
         {
+            std::cout << "\nNot enough ORB matches for initialization: nmatches = " << nmatches << ".\t tolerance is 100\n" << std::endl;
             delete mpInitializer;
             mpInitializer = static_cast<Initializer*>(NULL);
             return;
@@ -689,7 +696,10 @@ void Tracking::CreateInitialMapMonocular()
     float medianDepth = pKFini->ComputeSceneMedianDepth(2);
     float invMedianDepth = 1.0f/medianDepth;
 
-    if(medianDepth<0 || pKFcur->TrackedMapPoints(1)<100)
+    cout << "Median Depth is: " << medianDepth << endl;
+    cout << "Number of tracked map points is " << pKFcur->TrackedMapPoints(1) << endl;
+
+    if(medianDepth<0 || pKFcur->TrackedMapPoints(1)<75) // BM CHANGED HERE!!
     {
         cout << "Wrong initialization, reseting..." << endl;
         Reset();
@@ -765,6 +775,8 @@ bool Tracking::TrackReferenceKeyFrame()
     vector<MapPoint*> vpMapPointMatches;
 
     int nmatches = matcher.SearchByBoW(mpReferenceKF,mCurrentFrame,vpMapPointMatches);
+
+    cout << "\t\t" << nmatches << " matched features in TrackReferenceKeyFrame" << endl;
 
     if(nmatches<15)
         return false;
@@ -883,6 +895,8 @@ bool Tracking::TrackWithMotionModel()
     else
         th=7;
     int nmatches = matcher.SearchByProjection(mCurrentFrame,mLastFrame,th,mSensor==System::MONOCULAR);
+
+    cout << "\t\t" << nmatches << " matched features in TrackWithMotionModel" << endl;
 
     // If few matches, uses a wider window search
     if(nmatches<20)
