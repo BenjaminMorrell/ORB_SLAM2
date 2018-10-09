@@ -419,13 +419,19 @@ int ORBmatcher::SearchForInitialization(Frame &F1, Frame &F2, vector<cv::Point2f
     {
         cv::KeyPoint kp1 = F1.mvKeysUn[i1];
         int level1 = kp1.octave;
-        if(level1>0)
+        if(level1>0){
+            // std::cout << "no matches because level1 > 0: " << level1 << std::endl;
             continue;
-
+        }
+            
         vector<size_t> vIndices2 = F2.GetFeaturesInArea(vbPrevMatched[i1].x,vbPrevMatched[i1].y, windowSize,level1,level1);
 
-        if(vIndices2.empty())
+        // std::cout << "Number of features in the area: " << vIndices2.size() << std::endl;
+        if(vIndices2.empty()){
             continue;
+        }
+        
+            
 
         cv::Mat d1 = F1.mDescriptors.row(i1);
 
@@ -455,13 +461,16 @@ int ORBmatcher::SearchForInitialization(Frame &F1, Frame &F2, vector<cv::Point2f
                 bestDist2=dist;
             }
         }
-
+        // std::cout << "Best dist: " << bestDist << "\nbestDist2: " << bestDist2 << std::endl;
         if(bestDist<=TH_LOW)
         {
+            // std::cout << "Best dist below threshold low: " << TH_LOW << std::endl;
             if(bestDist<(float)bestDist2*mfNNratio)
             {
+                // std::cout << "Best dist below " << mfNNratio << " bestDist2.\n\tA MATCH" << std::endl;
                 if(vnMatches21[bestIdx2]>=0)
                 {
+                    // std::cout << "already a match, removing from matches to replace with this match" << endl;
                     vnMatches12[vnMatches21[bestIdx2]]=-1;
                     nmatches--;
                 }
@@ -469,9 +478,11 @@ int ORBmatcher::SearchForInitialization(Frame &F1, Frame &F2, vector<cv::Point2f
                 vnMatches21[bestIdx2]=i1;
                 vMatchedDistance[bestIdx2]=bestDist;
                 nmatches++;
+                // std::cout << "nmatches is: " << nmatches << std::endl;
 
                 if(mbCheckOrientation)
                 {
+                    // std::cout << "Checking orientation" << std::endl;
                     float rot = F1.mvKeysUn[i1].angle-F2.mvKeysUn[bestIdx2].angle;
                     if(rot<0.0)
                         rot+=360.0f;

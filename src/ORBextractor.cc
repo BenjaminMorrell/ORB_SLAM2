@@ -766,7 +766,7 @@ void ORBextractor::ComputeKeyPointsOctTree(vector<vector<KeyPoint> >& allKeypoin
 {
     allKeypoints.resize(nlevels);
 
-    const float W = 30;
+    const float W = 30; // BMorrell change this from the default of 30
 
     for (int level = 0; level < nlevels; ++level)
     {
@@ -785,6 +785,8 @@ void ORBextractor::ComputeKeyPointsOctTree(vector<vector<KeyPoint> >& allKeypoin
         const int nRows = height/W;
         const int wCell = ceil(width/nCols);
         const int hCell = ceil(height/nRows);
+
+        std::cout << "Cell width is " << wCell << " and height is " << hCell << std::endl;
 
         for(int i=0; i<nRows; i++)
         {
@@ -838,6 +840,9 @@ void ORBextractor::ComputeKeyPointsOctTree(vector<vector<KeyPoint> >& allKeypoin
 
         // Add border to coordinates and scale information
         const int nkps = keypoints.size();
+
+        std::cout << "ORBextractor has " << nkps << " keypoints at level " << level << std::endl;
+
         for(int i=0; i<nkps ; i++)
         {
             keypoints[i].pt.x+=minBorderX;
