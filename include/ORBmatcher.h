@@ -38,7 +38,7 @@ class ORBmatcher
 {    
 public:
 
-    ORBmatcher(float nnratio=0.6, bool checkOri=true);
+    ORBmatcher(float nnratio=0.6, bool checkOri=true, bool removeLevelCheck = false);
 
     // Computes the Hamming distance between two ORB descriptors
     static int DescriptorDistance(const cv::Mat &a, const cv::Mat &b);
@@ -99,6 +99,7 @@ protected:
 
     float mfNNratio;
     bool mbCheckOrientation;
+    bool mbRemoveLevelCheck;
 };
 
 }// namespace ORB_SLAM

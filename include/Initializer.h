@@ -35,7 +35,8 @@ class Initializer
 public:
 
     // Fix the reference frame
-    Initializer(const Frame &ReferenceFrame, float sigma = 1.0, int iterations = 200);
+    Initializer(const Frame &ReferenceFrame, float sigma = 1.0, int iterations = 200, float minParallax = 1.0,
+                            int minTriangulated = 50, bool reconstructHOnly = false, bool checkSecondBest = true);
 
     // Computes in parallel a fundamental matrix and a homography
     // Selects a model and tries to recover the motion and the structure from motion
@@ -90,6 +91,12 @@ private:
 
     // Ransac max iterations
     int mMaxIterations;
+
+    // Init settings
+    float mMinParallax;
+    int mMinTriangulated;
+    bool mbReconstructHOnly;
+    bool mbCheckSecondBest;
 
     // Ransac sets
     vector<vector<size_t> > mvSets;   

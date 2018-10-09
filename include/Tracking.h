@@ -214,6 +214,22 @@ protected:
     bool mbRGB;
 
     list<MapPoint*> mlpTemporalPoints;
+
+    // Initializer settings
+    float initSigma;
+    int initRANSAC;
+    int initMinParallax;
+    int initMinTriangulated;
+    int initMinMapPoints;
+    bool binitReconstructHOnly;
+    bool binitCheckSecondBest;
+    int initMatchSearchWindow;
+    int initNMatchesCriterion;
+    bool binitRemoveLevelCheck;
+
+    // ORB matcher settings
+    float matcherNNratio;
+    int trackerSearchWindow;
 };
 
 } //namespace ORB_SLAM

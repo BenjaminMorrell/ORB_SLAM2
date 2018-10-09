@@ -41,51 +41,6 @@ ORBextractor.nLevels: 8 #8 # increase this if there is large scale change
 ORBextractor.iniThFAST: 20
 ORBextractor.minThFAST: 7
 
-# Size of cells for FAST corner extrasction 
-ORBextractor.cellSize: 30 # default 30
-
-# # ORB Distance thresholds (haven't modified these much)
-# ORBmatcher.thLow: 50 # deault 50
-# ORBmatcher.thHigh: 100 # default 100
-ORBmatcher.nnratio: 0.9 # default 0.9 - NC
-
-ORBtracker.searchWindow: 15 # default 15 
-
-#--------------------------------------------------------------------------------------------
-# Initialization Parameters
-#--------------------------------------------------------------------------------------------
-
-# Initialize parameters
-# Sigma - the tolerance of error for matching features
-Initializer.sigma: 10.0 # default is 1.0
-# Number of RANSAC iterations in intiailization 
-Initializer.ransacIter: 2000 # Default is 200
-
-# Min settings
-# Parallax required for best match to pass
-Initializer.minParallax: 0.2 # default 1.0
-# Number of triangulated points to pass
-Initializer.minTriangulated: 50 # default 50 - NC
-
-# Minimum number of points needed for init map
-Initializer.minMapPoints: 75 # Default is 100
-
-# Initializer process
-# Use only the homography reconstruction method (and not the Fundamental matrix method)
-Initializer.reconstructHOnly: true # default is false
-# Reject if the second best match is close to the best
-Initializer.checkSecondBest: false # default is true
-
-
-# Use more than the first level in the ORBmatcher initialization
-Initializer.removeLevelCheck: false # default is false
-
-# Search window for initial matches search
-Initializer.matchSearchWindow: 100 # default 100 - NC
-# Number of matches requried to start initialization
-Initializer.nMatchesCriterion: 100 # default 100 - NC
-
-
 #--------------------------------------------------------------------------------------------
 # Viewer Parameters
 #---------------------------------------------------------------------------------------------

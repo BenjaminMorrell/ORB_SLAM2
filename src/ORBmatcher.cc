@@ -38,7 +38,8 @@ const int ORBmatcher::TH_HIGH = 100;
 const int ORBmatcher::TH_LOW = 50;
 const int ORBmatcher::HISTO_LENGTH = 30;
 
-ORBmatcher::ORBmatcher(float nnratio, bool checkOri): mfNNratio(nnratio), mbCheckOrientation(checkOri)
+ORBmatcher::ORBmatcher(float nnratio, bool checkOri, bool removeLevelCheck): mfNNratio(nnratio), mbCheckOrientation(checkOri), 
+                        mbRemoveLevelCheck(removeLevelCheck)
 {
 }
 
@@ -419,7 +420,7 @@ int ORBmatcher::SearchForInitialization(Frame &F1, Frame &F2, vector<cv::Point2f
     {
         cv::KeyPoint kp1 = F1.mvKeysUn[i1];
         int level1 = kp1.octave;
-        if(level1>0){
+        if(level1>0 && !mbRemoveLevelCheck){
             // std::cout << "no matches because level1 > 0: " << level1 << std::endl;
             continue;
         }

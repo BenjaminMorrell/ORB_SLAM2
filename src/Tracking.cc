@@ -115,14 +115,15 @@ Tracking::Tracking(System *pSys, ORBVocabulary* pVoc, FrameDrawer *pFrameDrawer,
     int nLevels = fSettings["ORBextractor.nLevels"];
     int fIniThFAST = fSettings["ORBextractor.iniThFAST"];
     int fMinThFAST = fSettings["ORBextractor.minThFAST"];
+    float fCellSize = fSettings["ORBextractor.cellSize"];
 
-    mpORBextractorLeft = new ORBextractor(nFeatures,fScaleFactor,nLevels,fIniThFAST,fMinThFAST);
+    mpORBextractorLeft = new ORBextractor(nFeatures,fScaleFactor,nLevels,fIniThFAST,fMinThFAST,fCellSize);
 
     if(sensor==System::STEREO)
-        mpORBextractorRight = new ORBextractor(nFeatures,fScaleFactor,nLevels,fIniThFAST,fMinThFAST);
+        mpORBextractorRight = new ORBextractor(nFeatures,fScaleFactor,nLevels,fIniThFAST,fMinThFAST,fCellSize);
 
     if(sensor==System::MONOCULAR)
-        mpIniORBextractor = new ORBextractor(2*nFeatures,fScaleFactor,nLevels,fIniThFAST,fMinThFAST);
+        mpIniORBextractor = new ORBextractor(2*nFeatures,fScaleFactor,nLevels,fIniThFAST,fMinThFAST,fCellSize);
 
     cout << endl  << "ORB Extractor Parameters: " << endl;
     cout << "- Number of Features: " << nFeatures << endl;
@@ -145,6 +146,25 @@ Tracking::Tracking(System *pSys, ORBVocabulary* pVoc, FrameDrawer *pFrameDrawer,
         else
             mDepthMapFactor = 1.0f/mDepthMapFactor;
     }
+
+    // Load Initializer parameters
+    initSigma = fSettings["Initializer.sigma"];
+    initRANSAC = fSettings["Initializer.ransacIter"];
+    initMinParallax= fSettings["Initializer.minParallax"];
+    initMinTriangulated = fSettings["Initializer.minTriangulated"];
+    initMinMapPoints = fSettings["Initializer.minMapPoints"];
+    int temp = fSettings["Initializer.reconstructHOnly"];
+    binitReconstructHOnly = (temp  == 1);
+    temp = fSettings["Initializer.checkSecondBest"];
+    binitCheckSecondBest = (temp == 1);
+    initMatchSearchWindow = fSettings["Initializer.matchSearchWindow"];
+    initNMatchesCriterion = fSettings["Initializer.nMatchesCriterion"];
+    temp = fSettings["Initializer.removeLevelCheck"];
+    binitRemoveLevelCheck = (temp == 1);
+
+    matcherNNratio = fSettings["ORBmatcher.nnratio"];
+
+    trackerSearchWindow = fSettings["ORBtracker.nnratio"];
 
 }
 
@@ -577,7 +597,8 @@ void Tracking::MonocularInitialization()
             if(mpInitializer)
                 delete mpInitializer;
 
-            mpInitializer =  new Initializer(mCurrentFrame,10.0,2000);
+            mpInitializer =  new Initializer(mCurrentFrame,initSigma,initRANSAC,initMinParallax,
+                                                initMinTriangulated, binitReconstructHOnly, binitCheckSecondBest);
 
             fill(mvIniMatches.begin(),mvIniMatches.end(),-1);
 
@@ -602,13 +623,13 @@ void Tracking::MonocularInitialization()
         }
 
         // Find correspondences
-        ORBmatcher matcher(0.9,true);
-        int nmatches = matcher.SearchForInitialization(mInitialFrame,mCurrentFrame,mvbPrevMatched,mvIniMatches,100);
+        ORBmatcher matcher(matcherNNratio,true, binitRemoveLevelCheck);
+        int nmatches = matcher.SearchForInitialization(mInitialFrame,mCurrentFrame,mvbPrevMatched,mvIniMatches,initMatchSearchWindow);
 
         // Check if there are enough correspondences
-        if(nmatches<100)
+        if(nmatches<initNMatchesCriterion)
         {
-            std::cout << "\nNot enough ORB matches for initialization: nmatches = " << nmatches << ".\t tolerance is 100\n" << std::endl;
+            std::cout << "\nNot enough ORB matches for initialization: nmatches = " << nmatches << ".\t tolerance is " << initNMatchesCriterion << "\n" << std::endl;
             delete mpInitializer;
             mpInitializer = static_cast<Initializer*>(NULL);
             return;
@@ -699,7 +720,7 @@ void Tracking::CreateInitialMapMonocular()
     cout << "Median Depth is: " << medianDepth << endl;
     cout << "Number of tracked map points is " << pKFcur->TrackedMapPoints(1) << endl;
 
-    if(medianDepth<0 || pKFcur->TrackedMapPoints(1)<75) // BM CHANGED HERE!!
+    if(medianDepth<0 || pKFcur->TrackedMapPoints(1)<initMinMapPoints) // BM CHANGED HERE!!
     {
         cout << "Wrong initialization, reseting..." << endl;
         Reset();
@@ -878,7 +899,7 @@ void Tracking::UpdateLastFrame()
 
 bool Tracking::TrackWithMotionModel()
 {
-    ORBmatcher matcher(0.9,true);
+    ORBmatcher matcher(matcherNNratio,true);
 
     // Update last frame pose according to its reference keyframe
     // Create "visual odometry" points if in Localization Mode
@@ -891,7 +912,7 @@ bool Tracking::TrackWithMotionModel()
     // Project points seen in previous frame
     int th;
     if(mSensor!=System::STEREO)
-        th=50; // BM changed from 15
+        th = trackerSearchWindow; // BM changed from 15
     else
         th=7;
     int nmatches = matcher.SearchByProjection(mCurrentFrame,mLastFrame,th,mSensor==System::MONOCULAR);
@@ -1407,7 +1428,7 @@ bool Tracking::Relocalization()
     // Alternatively perform some iterations of P4P RANSAC
     // Until we found a camera pose supported by enough inliers
     bool bMatch = false;
-    ORBmatcher matcher2(0.9,true);
+    ORBmatcher matcher2(matcherNNratio,true);
 
     while(nCandidates>0 && !bMatch)
     {

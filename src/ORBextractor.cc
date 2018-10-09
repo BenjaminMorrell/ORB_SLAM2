@@ -408,9 +408,9 @@ static int bit_pattern_31_[256*4] =
 };
 
 ORBextractor::ORBextractor(int _nfeatures, float _scaleFactor, int _nlevels,
-         int _iniThFAST, int _minThFAST):
+         int _iniThFAST, int _minThFAST, float _cellSize):
     nfeatures(_nfeatures), scaleFactor(_scaleFactor), nlevels(_nlevels),
-    iniThFAST(_iniThFAST), minThFAST(_minThFAST)
+    iniThFAST(_iniThFAST), minThFAST(_minThFAST), cellSize(_cellSize)
 {
     mvScaleFactor.resize(nlevels);
     mvLevelSigma2.resize(nlevels);
@@ -766,7 +766,7 @@ void ORBextractor::ComputeKeyPointsOctTree(vector<vector<KeyPoint> >& allKeypoin
 {
     allKeypoints.resize(nlevels);
 
-    const float W = 30; // BMorrell change this from the default of 30
+    const float W = cellSize; // BMorrell change this from the default of 30
 
     for (int level = 0; level < nlevels; ++level)
     {

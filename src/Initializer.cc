@@ -31,7 +31,8 @@
 namespace ORB_SLAM2
 {
 
-Initializer::Initializer(const Frame &ReferenceFrame, float sigma, int iterations)
+Initializer::Initializer(const Frame &ReferenceFrame, float sigma, int iterations, float minParallax,
+                            int minTriangulated, bool reconstructHOnly, bool checkSecondBest)
 {
     mK = ReferenceFrame.mK.clone();
 
@@ -40,6 +41,10 @@ Initializer::Initializer(const Frame &ReferenceFrame, float sigma, int iteration
     mSigma = sigma;
     mSigma2 = sigma*sigma;
     mMaxIterations = iterations;
+    mMinParallax = minParallax;
+    mMinTriangulated = minTriangulated;
+    mbReconstructHOnly = reconstructHOnly;
+    mbCheckSecondBest = checkSecondBest;
 }
 
 bool Initializer::Initialize(const Frame &CurrentFrame, const vector<int> &vMatches12, cv::Mat &R21, cv::Mat &t21,
@@ -106,22 +111,33 @@ bool Initializer::Initialize(const Frame &CurrentFrame, const vector<int> &vMatc
     thread threadH(&Initializer::FindHomography,this,ref(vbMatchesInliersH), ref(SH), ref(H));
     thread threadF(&Initializer::FindFundamental,this,ref(vbMatchesInliersF), ref(SF), ref(F));
 
+    
+
     // Wait until both threads have finished
     threadH.join();
     threadF.join();
+    
+    
 
+    float RH;
     // Compute ratio of scores
-    float RH = SH/(SH+SF);
+    if (~mbReconstructHOnly){
+        RH = SH/(SH+SF);
 
-    std::cout << "Ratio score RH is: " << RH << std::endl;
+        std::cout << "Ratio score RH is: " << RH << std::endl;
+    }
 
-    // Try to reconstruct from homography or fundamental depending on the ratio (0.40-0.45)
-    float minParallax = 0.2;
-    //if(RH>0.40)
-        return ReconstructH(vbMatchesInliersH,H,mK,R21,t21,vP3D,vbTriangulated,minParallax,50);
-    //else //if(pF_HF>0.6)
-      //  return ReconstructF(vbMatchesInliersF,F,mK,R21,t21,vP3D,vbTriangulated,minParallax,50);
-
+    if (mbReconstructHOnly){
+        return ReconstructH(vbMatchesInliersH,H,mK,R21,t21,vP3D,vbTriangulated,mMinParallax,mMinTriangulated);
+    }
+    else{
+        // Try to reconstruct from homography or fundamental depending on the ratio (0.40-0.45)
+        if(RH>0.40)
+            return ReconstructH(vbMatchesInliersH,H,mK,R21,t21,vP3D,vbTriangulated,mMinParallax,mMinTriangulated);
+        else
+           return ReconstructF(vbMatchesInliersF,F,mK,R21,t21,vP3D,vbTriangulated,mMinParallax,mMinTriangulated);
+    }
+    
     std::cout << "Failed criteria - no initialisation" << std::endl;
 
     return false;
