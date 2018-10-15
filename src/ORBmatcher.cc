@@ -180,6 +180,7 @@ int ORBmatcher::SearchByBoW(KeyFrame* pKF,Frame &F, vector<MapPoint*> &vpMapPoin
 
     while(KFit != KFend && Fit != Fend)
     {
+        std::cout << "number of matches: " << nmatches << std::endl;
         if(KFit->first == Fit->first)
         {
             const vector<unsigned int> vIndicesKF = KFit->second;
@@ -226,10 +227,10 @@ int ORBmatcher::SearchByBoW(KeyFrame* pKF,Frame &F, vector<MapPoint*> &vpMapPoin
                     }
                 }
 
-                if(bestDist1<=TH_LOW)
+                if(bestDist1<=TH_LOW*2)
                 {
-                    if(static_cast<float>(bestDist1)<mfNNratio*static_cast<float>(bestDist2))
-                    {
+                    // if(static_cast<float>(bestDist1)<mfNNratio*static_cast<float>(bestDist2))
+                    // {
                         vpMapPointMatches[bestIdxF]=pMP;
 
                         const cv::KeyPoint &kp = pKF->mvKeysUn[realIdxKF];
@@ -246,7 +247,11 @@ int ORBmatcher::SearchByBoW(KeyFrame* pKF,Frame &F, vector<MapPoint*> &vpMapPoin
                             rotHist[bin].push_back(bestIdxF);
                         }
                         nmatches++;
-                    }
+                    // }else{
+                    //     std::cout << "SearchByBoW: Ratio to second best fails" << std::endl;
+                    // }
+                }else {
+                    std::cout << "SearchByBoW: Best distance is below threshold" << std::endl;
                 }
 
             }
@@ -559,8 +564,11 @@ int ORBmatcher::SearchByBoW(KeyFrame *pKF1, KeyFrame *pKF2, vector<MapPoint *> &
     DBoW2::FeatureVector::const_iterator f1end = vFeatVec1.end();
     DBoW2::FeatureVector::const_iterator f2end = vFeatVec2.end();
 
+    std::cout << "In SearchByBoW" << std::endl;
+
     while(f1it != f1end && f2it != f2end)
     {
+        std::cout << "number of matches: " << nmatches << std::endl;
         if(f1it->first == f2it->first)
         {
             for(size_t i1=0, iend1=f1it->second.size(); i1<iend1; i1++)
@@ -626,7 +634,11 @@ int ORBmatcher::SearchByBoW(KeyFrame *pKF1, KeyFrame *pKF2, vector<MapPoint *> &
                             rotHist[bin].push_back(idx1);
                         }
                         nmatches++;
+                    }else{
+                        std::cout << "SearchByBoW: Ratio to second best fails" << std::endl;
                     }
+                }else{
+                    std::cout << "SearchByBoW: Best distance is below threshold" << std::endl;
                 }
             }
 

@@ -218,7 +218,7 @@ protected:
     // Initializer settings
     float initSigma;
     int initRANSAC;
-    int initMinParallax;
+    float initMinParallax;
     int initMinTriangulated;
     int initMinMapPoints;
     bool binitReconstructHOnly;

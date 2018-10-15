@@ -26,7 +26,7 @@ Camera.RGB: 1
 #--------------------------------------------------------------------------------------------
 
 # ORB Extractor: Number of features per image
-ORBextractor.nFeatures: 8000 # 1000 - 8000 good
+ORBextractor.nFeatures: 8000 # 1000
 
 # ORB Extractor: Scale factor between levels in the scale pyramid 	
 ORBextractor.scaleFactor: 1.2 # 1.2
@@ -67,7 +67,7 @@ Initializer.minParallax: 0.2 # default 1.0
 # Number of triangulated points to pass
 Initializer.minTriangulated: 50 # default 50 - NC
 
-# Minimum number of points needed for init mapgma
+# Minimum number of points needed for init map
 Initializer.minMapPoints: 75 # Default is 100
 
 # Initializer process

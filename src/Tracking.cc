@@ -150,7 +150,7 @@ Tracking::Tracking(System *pSys, ORBVocabulary* pVoc, FrameDrawer *pFrameDrawer,
     // Load Initializer parameters
     initSigma = fSettings["Initializer.sigma"];
     initRANSAC = fSettings["Initializer.ransacIter"];
-    initMinParallax= fSettings["Initializer.minParallax"];
+    initMinParallax = fSettings["Initializer.minParallax"];
     initMinTriangulated = fSettings["Initializer.minTriangulated"];
     initMinMapPoints = fSettings["Initializer.minMapPoints"];
     int temp = fSettings["Initializer.reconstructHOnly"];
@@ -164,7 +164,19 @@ Tracking::Tracking(System *pSys, ORBVocabulary* pVoc, FrameDrawer *pFrameDrawer,
 
     matcherNNratio = fSettings["ORBmatcher.nnratio"];
 
-    trackerSearchWindow = fSettings["ORBtracker.nnratio"];
+    trackerSearchWindow = fSettings["ORBtracker.searchWindow"];
+
+    cout << endl  << "Initializer Parameters: " << endl;
+    cout << "- Sigma: " << initSigma << endl;
+    cout << "- RANSAC Iter: " << initRANSAC << endl;
+    cout << "- minParallax: " << initMinParallax << endl;
+    cout << "- Min Map points: " << initMinMapPoints << endl;
+    cout << "- Only H reconstruction: " << binitReconstructHOnly << endl;
+    cout << "- Second Best check: " << binitCheckSecondBest << endl;
+    cout << "- Remove level check: " << binitRemoveLevelCheck << endl;
+
+    cout << endl  << "Tracking Parameters: " << endl;
+    cout << "- Search window: " << trackerSearchWindow << endl;
 
 }
 
@@ -334,6 +346,8 @@ void Tracking::Track()
                     if(!bOK)
                         bOK = TrackReferenceKeyFrame();
                 }
+
+                cout << "bOK after TrackReferenceKeyFrame and TrackWithMotionModel is " << bOK << endl;
             }
             else
             {
@@ -419,6 +433,8 @@ void Tracking::Track()
         {
             if(bOK)
                 bOK = TrackLocalMap();
+
+            cout << "bOK after TrackLocalMap is " << bOK << endl;
         }
         else
         {
@@ -792,7 +808,7 @@ bool Tracking::TrackReferenceKeyFrame()
 
     // We perform first an ORB matching with the reference keyframe
     // If enough matches are found we setup a PnP solver
-    ORBmatcher matcher(0.7,true);
+    ORBmatcher matcher(0.9,true);
     vector<MapPoint*> vpMapPointMatches;
 
     int nmatches = matcher.SearchByBoW(mpReferenceKF,mCurrentFrame,vpMapPointMatches);

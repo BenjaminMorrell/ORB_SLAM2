@@ -77,9 +77,9 @@ int main(int argc, char **argv)
     ros::spin();
 
     // Save camera trajectory
-    SLAM.SaveKeyFrameTrajectoryTUM("/home/bjm/postdoc/data/KeyFrameTrajectory_TUM_Format.txt");
-    SLAM.SaveTrajectoryTUM("/home/bjm/postdoc/data/FrameTrajectory_TUM_Format.txt");
-    SLAM.SaveTrajectoryKITTI("/home/bjm/postdoc/data/FrameTrajectory_KITTI_Format.txt");
+    SLAM.SaveKeyFrameTrajectoryTUM("/home/bjm/postdoc/Results/KeyFrameTrajectory.txt");
+    // SLAM.SaveTrajectoryTUM("/home/bjm/postdoc/data/FrameTrajectory_TUM_Format.txt");
+    // SLAM.SaveTrajectoryKITTI("/home/bjm/postdoc/data/FrameTrajectory_KITTI_Format.txt");
     
     // Stop all threads
     SLAM.Shutdown();
