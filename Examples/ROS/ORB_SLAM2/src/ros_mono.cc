@@ -80,6 +80,9 @@ int main(int argc, char **argv)
     SLAM.SaveKeyFrameTrajectoryTUM("/home/bjm/postdoc/Results/KeyFrameTrajectory.txt");
     // SLAM.SaveTrajectoryTUM("/home/bjm/postdoc/data/FrameTrajectory_TUM_Format.txt");
     // SLAM.SaveTrajectoryKITTI("/home/bjm/postdoc/data/FrameTrajectory_KITTI_Format.txt");
+
+    // Save Map points
+    SLAM.SaveMapPoints("/home/bjm/postdoc/Results/ORBSLAMMapPoints.txt");
     
     // Stop all threads
     SLAM.Shutdown();

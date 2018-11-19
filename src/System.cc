@@ -472,6 +472,45 @@ void System::SaveTrajectoryKITTI(const string &filename)
     cout << endl << "trajectory saved!" << endl;
 }
 
+void System::SaveMapPoints(const string &filename)
+{
+    cout << endl << "Saving Map Points to " << filename << " ..." << endl;
+    
+    // Get the map points
+    vector<MapPoint*> vpMPs = mpMap->GetAllMapPoints();
+
+    ofstream f;
+    f.open(filename.c_str());
+    f << fixed;
+
+    // TODO(BMORRELL) set the origin to be at the centroid of the map points
+    // Defauly origin is at the first keyframe I beleive
+
+    for(size_t i=0; i<vpMPs.size(); i++)
+    {
+        MapPoint* pMP = vpMPs[i];
+
+       // pKF->SetPose(pKF->GetPose()*Two);
+
+        if(pMP->isBad())
+            continue;
+        if (pMP->nObs < 3)
+            continue;
+
+        // Get world position vector 
+        cv::Mat P = pMP->GetWorldPos();
+
+        f << setprecision(7) << pMP->mnId << " " << P.at<float>(0) << " " << P.at<float>(1) << " " << P.at<float>(2)
+          << " " << pMP->nObs << endl;
+
+    }
+
+    f.close();
+    cout << endl << "Map Points saved!" << endl;
+
+
+}
+
 int System::GetTrackingState()
 {
     unique_lock<mutex> lock(mMutexState);
