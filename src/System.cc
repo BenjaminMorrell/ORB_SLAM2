@@ -490,6 +490,27 @@ void System::SaveMapPoints(const string &filename)
     {
         MapPoint* pMP = vpMPs[i];
 
+        // Get the earliest ID of the keyframe that has observed it
+        // Keyframes that have observed the point
+        map<KeyFrame*,size_t> obs;
+        {
+            obs = pMP->GetObservations();
+        }
+
+        // Smallest ID
+        long unsigned int firstId = 999999;
+
+        for(map<KeyFrame*,size_t>::iterator mit=obs.begin(), mend=obs.end(); mit!=mend; mit++)
+        {
+            // Loop through each keyframe observing the point
+            KeyFrame* pKF = mit->first;
+            if (pKF->mnId < firstId){
+                // Update the firstId if the keyframe ID is smaller (assuming lower numbers are earlier observations)
+                firstId = pKF->mnId;
+            }
+
+        }
+
        // pKF->SetPose(pKF->GetPose()*Two);
 
         if(pMP->isBad())
@@ -501,7 +522,7 @@ void System::SaveMapPoints(const string &filename)
         cv::Mat P = pMP->GetWorldPos();
 
         f << setprecision(7) << pMP->mnId << " " << P.at<float>(0) << " " << P.at<float>(1) << " " << P.at<float>(2)
-          << " " << pMP->nObs << endl;
+          << " " << pMP->nObs << " " << firstId << endl;
 
     }
 
